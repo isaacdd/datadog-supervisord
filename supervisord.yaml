@@ -1,7 +1,8 @@
 init_config:
 
 instances:
-    - host: localhost
+    - name: server0
+      host: localhost
       port: 9001
       user: user # optional
       pass: pass # optional
