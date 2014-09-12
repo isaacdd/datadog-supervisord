@@ -12,7 +12,7 @@ OK = AgentCheck.OK
 CRITICAL = AgentCheck.CRITICAL
 UNKNOWN = AgentCheck.UNKNOWN
 
-STATUS_MAP = {
+DD_STATUS = {
     'STOPPED': CRITICAL,
     'STARTING': OK,
     'RUNNING': OK,
@@ -21,6 +21,12 @@ STATUS_MAP = {
     'EXITED': CRITICAL,
     'FATAL': CRITICAL,
     'UNKNOWN': UNKNOWN
+}
+
+PROCESS_STATUS = {
+    CRITICAL: 'down',
+    OK: 'up',
+    UNKNOWN: 'unknown'
 }
 
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -55,7 +61,7 @@ class SupervisordCheck(AgentCheck):
                     'process:%s' % proc_name]
 
             # Report Service Check
-            status = STATUS_MAP[proc['statename']]
+            status = DD_STATUS[proc['statename']]
             msg = self._build_message(proc)
             count[status] += 1
             self.service_check('supervisord.process.check',
@@ -66,10 +72,9 @@ class SupervisordCheck(AgentCheck):
 
         # Report counts by status
         tags = ['supervisord', 'server:%s' % server_name]
-        self.gauge('supervisord.process.total', len(processes), tags=tags)
-        self.gauge('supervisord.process.up', count[OK], tags=tags)
-        self.gauge('supervisord.process.down', count[CRITICAL], tags=tags)
-        self.gauge('supervisord.process.unknown', count[UNKNOWN], tags=tags)
+        for proc_status in PROCESS_STATUS:
+            self.gauge('supervisord.process.count', count[proc_status],
+                       tags=tags + ['status:%s' % PROCESS_STATUS[proc_status]])
 
     def _connect(self, instance):
         host = instance.get('host', DEFAULT_HOST)
