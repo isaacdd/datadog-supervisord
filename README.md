@@ -1,8 +1,8 @@
 A simple supervisord process and uptime check. Check collects the following:
 
-1. Service check on each process (Critical, OK, Unknown)
-2. Uptime of each process
-3. Process count by status metrics
+1. Service check on each process (Critical, OK, Unknown).
+2. Uptime of each process.
+3. Process count by status.
 
 Getting Started
 ---------------
