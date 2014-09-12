@@ -6,7 +6,9 @@ instances:
       port: 9001
       user: user # optional
       pass: pass # optional
-      proc_names:
+      proc_names: # optional. will monitor all processes if not specified
        - apache2
        - custom_app
        - etc
+    - name: server1
+      etc

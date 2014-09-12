@@ -33,7 +33,7 @@ def time_formatter(s):
 class SupervisordCheck(AgentCheck):
 
     def check(self, instance):
-        name = instance.get('name', DEFAULT_SERVER)
+        server_name = instance.get('name', DEFAULT_SERVER)
         server = self._connect(instance)
         count = {
             AgentCheck.OK: 0,
@@ -42,27 +42,31 @@ class SupervisordCheck(AgentCheck):
         }
 
         # Report service checks and uptime for each process
-        proc_names = instance.get('proc_names', [])
-        for proc_name in proc_names:
+        proc_names = instance.get('proc_names')
+        if proc_names and len(proc_names):
+            processes = [server.supervisor.getProcessInfo(p) for p in proc_names]
+        else:
+            processes = server.supervisor.getAllProcessInfo()
+
+        for proc in processes:
+            proc_name = proc['name']
             tags = ['supervisord',
-                    'server:%s' % name,
+                    'server:%s' % server_name,
                     'process:%s' % proc_name]
-            info = server.supervisor.getProcessInfo(proc_name)
 
             # Report Service Check
-            status = STATUS_MAP[info['statename']]
-            msg = self._build_message(info)
+            status = STATUS_MAP[proc['statename']]
+            msg = self._build_message(proc)
             count[status] += 1
             self.service_check('supervisord.process.check',
                                status, tags=tags, message=msg)
             # Report Uptime
-            start, stop, now = int(info['start']), int(info['stop']), int(info['now'])
-            uptime = 0 if stop == 0 else now - start
+            uptime = self._extract_uptime(proc)
             self.gauge('supervisord.process.uptime', uptime, tags=tags)
 
         # Report counts by status
-        tags = ['supervisord', 'server:%s' % name]
-        self.gauge('supervisord.process.total', len(proc_names), tags=tags)
+        tags = ['supervisord', 'server:%s' % server_name]
+        self.gauge('supervisord.process.total', len(processes), tags=tags)
         self.gauge('supervisord.process.up', count[OK], tags=tags)
         self.gauge('supervisord.process.down', count[CRITICAL], tags=tags)
         self.gauge('supervisord.process.unknown', count[UNKNOWN], tags=tags)
@@ -74,6 +78,15 @@ class SupervisordCheck(AgentCheck):
         password = instance.get('pass', None)
         auth = '%s:%s@' % (user, password) if user and password else ''
         return xmlrpclib.Server('http://%s%s:%s/RPC2' % (auth, host, port))
+
+    def _extract_uptime(self, proc):
+        desc = proc['description']
+        if proc['statename'] == 'RUNNING' and 'uptime' in desc:
+            h, m, s = desc.split('uptime ')[1].split(':')
+            return int(s) + 60 * (int(m) + 60 * int(h))
+        else:
+            start, stop, now = int(proc['start']), int(proc['stop']), int(proc['now'])
+            return 0 if stop >= start else now - start
 
     def _build_message(self, proc):
         start, stop, now = int(proc['start']), int(proc['stop']), int(proc['now'])
