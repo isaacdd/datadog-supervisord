@@ -76,9 +76,10 @@ class SupervisordCheck(AgentCheck):
         return xmlrpclib.Server('http://%s%s:%s/RPC2' % (auth, host, port))
 
     def _build_message(self, proc):
-        proc['now_str'] = time_formatter(proc['now'])
-        proc['start_str'] = time_formatter(proc['start'])
-        proc['stop_str'] = '' if proc['stop'] == 0 else time_formatter(proc['stop'])
+        start, stop, now = int(proc['start']), int(proc['stop']), int(proc['now'])
+        proc['now_str'] = time_formatter(now)
+        proc['start_str'] = time_formatter(start)
+        proc['stop_str'] = '' if stop == 0 else time_formatter(stop)
 
         return """Current time: %(now_str)s
 Process name: %(name)s
