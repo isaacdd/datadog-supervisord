@@ -1,0 +1,11 @@
+init_config:
+
+instances:
+    - host: localhost
+      port: 9001
+      user: user # optional
+      pass: pass # optional
+      proc_names:
+       - apache2
+       - custom_app
+       - etc
