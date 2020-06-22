@@ -1,3 +1,6 @@
+**NOTE: this check has been part of the datadog core integrations [repo](https://github.com/DataDog/integrations-core/tree/master/supervisord) and installs with the agent**
+
+
 A simple supervisord process and uptime check. Check collects the following:
 
 1. Service check on each process (Critical, OK, Unknown).
